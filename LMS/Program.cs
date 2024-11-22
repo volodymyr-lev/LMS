@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Serilog;
 using LMS.Data;
-using LMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -22,9 +21,6 @@ namespace LMS
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
                 throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
-            builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
-
 
             // Add DbContext and Identity
             builder.Services.AddDbContext<ApplicationDbContext>(options =>

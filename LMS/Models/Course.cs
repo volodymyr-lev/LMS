@@ -12,5 +12,5 @@ public class Course
     public string LecturerId { get; set; }
     public IdentityUser Lecturer { get; set; }
 
-    public ICollection<GroupCourse> GroupCourses { get; set; }
+    public ICollection<Group> Groups { get; set; }
 }
