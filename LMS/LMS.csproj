@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-LMS-77729b98-e1d8-4168-bffc-5a529ccc0db1</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" NoWarn="NU1605" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.0" NoWarn="NU1605" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.4.0" />
+    <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="3.4.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1" />
+    <PackageReference Include="Serilog" Version="4.1.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+  </ItemGroup>
+
+</Project>
