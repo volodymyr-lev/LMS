@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using LMS.Data;
 using LMS.Models;
 using System.Threading.Tasks;
+using LMS.DTOs;
+using Microsoft.AspNetCore.Identity;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -11,25 +13,30 @@ using System.Threading.Tasks;
 public class GroupController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public GroupController(ApplicationDbContext context)
+
+    public GroupController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
     {
         _context = context;
+        _userManager = userManager;
     }
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateGroup([FromBody] Group group)
+    public async Task<IActionResult> CreateGroup([FromBody] CreateGroupRequest request)
     {
-        if (group == null)
+        if (request == null)
         {
             return BadRequest("Invalid group data.");
         }
 
-        var course = await _context.Courses.FindAsync(group.CourseId);
-        if (course == null)
+        var group = new Group
         {
-            return NotFound($"Course with ID {group.CourseId} not found.");
-        }
+            Name = request.Name,
+            Students = await _userManager.Users
+                .Where(u => request.StudentIds.Contains(u.Id))
+                .ToListAsync()
+        };
 
         _context.Groups.Add(group);
         await _context.SaveChangesAsync();
@@ -40,9 +47,12 @@ public class GroupController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetGroup(int id)
     {
-        var group = await _context.Groups.Include(g => g.Course)
-                                         .Include(g => g.Students)
-                                         .FirstOrDefaultAsync(g => g.Id == id);
+        var group = await _context.Groups
+            .Include(g => g.GroupCourses)
+                .ThenInclude(gc => gc.Course)
+            .Include(g => g.Students)
+            .FirstOrDefaultAsync(g => g.Id == id);
+
         if (group == null)
         {
             return NotFound($"Group with ID {id} not found.");
@@ -52,26 +62,30 @@ public class GroupController : ControllerBase
     }
 
     [HttpPut("update/{id}")]
-    public async Task<IActionResult> UpdateGroup(int id, [FromBody] Group updatedGroup)
+    public async Task<IActionResult> UpdateGroup(int id, [FromBody] UpdateGroupRequest request)
     {
-        if (updatedGroup == null || updatedGroup.Id != id)
+        if (request == null)
         {
             return BadRequest("Invalid group data.");
         }
 
-        var existingGroup = await _context.Groups.Include(g => g.Course)
-                                                 .FirstOrDefaultAsync(g => g.Id == id);
-        if (existingGroup == null)
+        var group = await _context.Groups
+            .Include(g => g.Students)
+            .FirstOrDefaultAsync(g => g.Id == id);
+
+        if (group == null)
         {
             return NotFound($"Group with ID {id} not found.");
         }
 
-        existingGroup.Name = updatedGroup.Name;
-        existingGroup.CourseId = updatedGroup.CourseId;
+        group.Name = request.Name;
+        group.Students = await _userManager.Users
+            .Where(u => request.StudentIds.Contains(u.Id))
+            .ToListAsync();
 
         await _context.SaveChangesAsync();
 
-        return Ok(existingGroup);
+        return Ok(group);
     }
 
     [HttpDelete("delete/{id}")]

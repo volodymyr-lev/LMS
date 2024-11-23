@@ -36,19 +36,16 @@ public class CourseController : ControllerBase
             return BadRequest("Lecturer not found.");
         }
 
-        var groups = await _context.Groups.Where(g => request.GroupIds.Contains(g.Id)).ToListAsync();
-        if (groups.Count != request.GroupIds.Count)
-        {
-            return BadRequest("Some groups were not found.");
-        }
-
         var course = new Course
         {
             Name = request.Name,
             Description = request.Description,
             Credits = request.Credits,
             LecturerId = request.LecturerId,
-            Groups = groups
+            GroupCourses = request.GroupIds.Select(groupId => new GroupCourse
+            {
+                GroupId = groupId
+            }).ToList()
         };
 
         _context.Courses.Add(course);
@@ -60,9 +57,11 @@ public class CourseController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCourse(int id)
     {
-        var course = await _context.Courses.Include(c => c.Lecturer)
-                                           .Include(c => c.Groups)
-                                           .FirstOrDefaultAsync(c => c.Id == id);
+        var course = await _context.Courses
+            .Include(c => c.Lecturer)
+            .Include(c => c.GroupCourses)
+                .ThenInclude(gc => gc.Group)
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (course == null)
         {
@@ -80,23 +79,28 @@ public class CourseController : ControllerBase
             return BadRequest("Invalid request.");
         }
 
-        var course = await _context.Courses.Include(c => c.Groups).FirstOrDefaultAsync(c => c.Id == id);
+        var course = await _context.Courses
+            .Include(c => c.GroupCourses)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (course == null)
         {
             return NotFound("Course not found.");
         }
 
-        var groups = await _context.Groups.Where(g => request.GroupIds.Contains(g.Id)).ToListAsync();
-        if (groups.Count != request.GroupIds.Count)
-        {
-            return BadRequest("Some groups were not found.");
-        }
-
+        // Update course properties
         course.Name = request.Name;
         course.Description = request.Description;
         course.Credits = request.Credits;
         course.LecturerId = request.LecturerId;
-        course.Groups = groups;
+
+        // Update group associations
+        course.GroupCourses.Clear();
+        course.GroupCourses = request.GroupIds.Select(groupId => new GroupCourse
+        {
+            CourseId = id,
+            GroupId = groupId
+        }).ToList();
 
         await _context.SaveChangesAsync();
 

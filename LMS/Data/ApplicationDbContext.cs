@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using LMS.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LMS.Data
 {
@@ -12,6 +14,7 @@ namespace LMS.Data
 
         public DbSet<Course> Courses { get; set; }
         public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupCourse> GroupCourses { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<Thesis> Theses { get; set; }
         public DbSet<CourseWork> CourseWorks { get; set; }
@@ -24,41 +27,38 @@ namespace LMS.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Course конфігурація
+            // Course Configuration
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Lecturer)
                 .WithMany()
                 .HasForeignKey(c => c.LecturerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Course>()
-                .HasMany(c => c.Groups)
-                .WithOne(g => g.Course)
-                .HasForeignKey(g => g.CourseId)
+            // Group-Course Configuration (Many-to-Many)
+            modelBuilder.Entity<GroupCourse>()
+                .HasKey(gc => new { gc.GroupId, gc.CourseId });
+
+            modelBuilder.Entity<GroupCourse>()
+                .HasOne(gc => gc.Group)
+                .WithMany(g => g.GroupCourses)
+                .HasForeignKey(gc => gc.GroupId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Group конфігурація
-            modelBuilder.Entity<Group>()
-                .HasMany(g => g.Students)
-                .WithMany(s => s.Groups)
-                .UsingEntity<Enrollment>(
-                    j => j
-                        .HasOne(e => e.Student)
-                        .WithMany()
-                        .HasForeignKey(e => e.StudentId)
-                        .OnDelete(DeleteBehavior.Restrict),
-                    j => j
-                        .HasOne(e => e.Group)
-                        .WithMany()
-                        .HasForeignKey(e => e.GroupId)
-                        .OnDelete(DeleteBehavior.Cascade),
-                    j =>
-                    {
-                        j.ToTable("GroupStudents");
-                        j.HasKey(gs => new { gs.GroupId, gs.StudentId });
-                    });
+            modelBuilder.Entity<GroupCourse>()
+                .HasOne(gc => gc.Course)
+                .WithMany(c => c.GroupCourses)
+                .HasForeignKey(gc => gc.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // Enrollment конфігурація
+            // Group-Student Configuration (One-to-Many)
+            modelBuilder.Entity<IdentityUser>()
+                .HasOne<Group>()
+                .WithMany(g => g.Students)
+                .HasForeignKey("GroupId")
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Enrollment Configuration
             modelBuilder.Entity<Enrollment>()
                 .HasOne(e => e.Student)
                 .WithMany()
@@ -71,21 +71,21 @@ namespace LMS.Data
                 .HasForeignKey(e => e.CourseId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // CourseWork конфігурація
+            // CourseWork Configuration
             modelBuilder.Entity<CourseWork>()
                 .HasOne(cw => cw.Student)
                 .WithMany()
                 .HasForeignKey(cw => cw.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Thesis конфігурація
+            // Thesis Configuration
             modelBuilder.Entity<Thesis>()
                 .HasOne(t => t.Student)
                 .WithMany()
                 .HasForeignKey(t => t.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ThesisVerification конфігурація
+            // ThesisVerification Configuration
             modelBuilder.Entity<ThesisVerification>()
                 .HasOne(tv => tv.Thesis)
                 .WithMany()
@@ -98,12 +98,51 @@ namespace LMS.Data
                 .HasForeignKey(v => v.ThesisVerificationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Rule і RuleParameter конфігурація
+            // Rule and RuleParameter Configuration
             modelBuilder.Entity<Rule>()
                 .HasMany(r => r.Parameters)
                 .WithOne(rp => rp.Rule)
                 .HasForeignKey(rp => rp.RuleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+
+            // Configure table names explicitly
+            modelBuilder.Entity<Course>().ToTable("Courses");
+            modelBuilder.Entity<Group>().ToTable("Groups");
+            modelBuilder.Entity<GroupCourse>().ToTable("GroupCourses");
+            modelBuilder.Entity<Enrollment>().ToTable("Enrollments");
+            modelBuilder.Entity<Thesis>().ToTable("Theses");
+            modelBuilder.Entity<CourseWork>().ToTable("CourseWorks");
+            modelBuilder.Entity<Rule>().ToTable("Rules");
+            modelBuilder.Entity<RuleParameter>().ToTable("RuleParameters");
+            modelBuilder.Entity<ThesisVerification>().ToTable("ThesisVerifications");
+            modelBuilder.Entity<Violation>().ToTable("Violations");
+
+            // Add indexes
+            modelBuilder.Entity<Course>()
+                .HasIndex(c => c.LecturerId);
+
+            modelBuilder.Entity<CourseWork>()
+                .HasIndex(cw => cw.StudentId);
+
+            modelBuilder.Entity<Thesis>()
+                .HasIndex(t => t.StudentId);
+
+            modelBuilder.Entity<ThesisVerification>()
+                .HasIndex(tv => tv.ThesisId);
+
+            modelBuilder.Entity<Violation>()
+                .HasIndex(v => v.ThesisVerificationId);
+
+            modelBuilder.Entity<RuleParameter>()
+                .HasIndex(rp => rp.RuleId);
+
+            // Configure cascade delete behavior
+            foreach (var relationship in modelBuilder.Model.GetEntityTypes()
+                .SelectMany(e => e.GetForeignKeys()))
+            {
+                relationship.DeleteBehavior = DeleteBehavior.Restrict;
+            }
         }
     }
 }

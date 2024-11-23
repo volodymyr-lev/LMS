@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241121222242_InitialCreate")]
+    [Migration("20241123000300_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,21 +24,6 @@ namespace LMS.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("GroupIdentityUser", b =>
-                {
-                    b.Property<int>("GroupId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("StudentsId")
-                        .HasColumnType("text");
-
-                    b.HasKey("GroupId", "StudentsId");
-
-                    b.HasIndex("StudentsId");
-
-                    b.ToTable("GroupStudents", (string)null);
-                });
 
             modelBuilder.Entity("LMS.Models.Course", b =>
                 {
@@ -67,7 +52,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("LecturerId");
 
-                    b.ToTable("Courses");
+                    b.ToTable("Courses", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.CourseWork", b =>
@@ -102,7 +87,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("CourseWorks");
+                    b.ToTable("CourseWorks", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.Enrollment", b =>
@@ -133,7 +118,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Enrollments");
+                    b.ToTable("Enrollments", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.Group", b =>
@@ -144,18 +129,28 @@ namespace LMS.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CourseId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
+                    b.ToTable("Groups", (string)null);
+                });
+
+            modelBuilder.Entity("LMS.Models.GroupCourse", b =>
+                {
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GroupId", "CourseId");
+
                     b.HasIndex("CourseId");
 
-                    b.ToTable("Groups");
+                    b.ToTable("GroupCourses", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.Rule", b =>
@@ -176,7 +171,7 @@ namespace LMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Rules");
+                    b.ToTable("Rules", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.RuleParameter", b =>
@@ -202,7 +197,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("RuleId");
 
-                    b.ToTable("RuleParameters");
+                    b.ToTable("RuleParameters", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.Thesis", b =>
@@ -237,7 +232,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Theses");
+                    b.ToTable("Theses", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.ThesisVerification", b =>
@@ -266,7 +261,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("ThesisId");
 
-                    b.ToTable("ThesisVerifications");
+                    b.ToTable("ThesisVerifications", (string)null);
                 });
 
             modelBuilder.Entity("LMS.Models.Violation", b =>
@@ -288,7 +283,7 @@ namespace LMS.Migrations
 
                     b.HasIndex("ThesisVerificationId");
 
-                    b.ToTable("Violations");
+                    b.ToTable("Violations", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -361,6 +356,9 @@ namespace LMS.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("GroupId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
 
@@ -395,6 +393,8 @@ namespace LMS.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -487,21 +487,6 @@ namespace LMS.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("GroupIdentityUser", b =>
-                {
-                    b.HasOne("LMS.Models.Group", null)
-                        .WithMany()
-                        .HasForeignKey("GroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("StudentsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LMS.Models.Course", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Lecturer")
@@ -543,15 +528,23 @@ namespace LMS.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("LMS.Models.Group", b =>
+            modelBuilder.Entity("LMS.Models.GroupCourse", b =>
                 {
                     b.HasOne("LMS.Models.Course", "Course")
-                        .WithMany("Groups")
+                        .WithMany("GroupCourses")
                         .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LMS.Models.Group", "Group")
+                        .WithMany("GroupCourses")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Course");
+
+                    b.Navigation("Group");
                 });
 
             modelBuilder.Entity("LMS.Models.RuleParameter", b =>
@@ -559,7 +552,7 @@ namespace LMS.Migrations
                     b.HasOne("LMS.Models.Rule", "Rule")
                         .WithMany("Parameters")
                         .HasForeignKey("RuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Rule");
@@ -592,7 +585,7 @@ namespace LMS.Migrations
                     b.HasOne("LMS.Models.ThesisVerification", "ThesisVerification")
                         .WithMany("Violations")
                         .HasForeignKey("ThesisVerificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ThesisVerification");
@@ -603,8 +596,16 @@ namespace LMS.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
+                {
+                    b.HasOne("LMS.Models.Group", null)
+                        .WithMany("Students")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -612,7 +613,7 @@ namespace LMS.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -621,7 +622,7 @@ namespace LMS.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -630,13 +631,13 @@ namespace LMS.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -645,13 +646,20 @@ namespace LMS.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
             modelBuilder.Entity("LMS.Models.Course", b =>
                 {
-                    b.Navigation("Groups");
+                    b.Navigation("GroupCourses");
+                });
+
+            modelBuilder.Entity("LMS.Models.Group", b =>
+                {
+                    b.Navigation("GroupCourses");
+
+                    b.Navigation("Students");
                 });
 
             modelBuilder.Entity("LMS.Models.Rule", b =>
