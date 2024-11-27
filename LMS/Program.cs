@@ -86,6 +86,8 @@ namespace LMS
                 });
             });
 
+            builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", b => b.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());

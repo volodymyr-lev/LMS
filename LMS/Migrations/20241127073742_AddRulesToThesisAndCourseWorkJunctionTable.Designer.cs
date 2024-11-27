@@ -3,6 +3,7 @@ using System;
 using LMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241127073742_AddRulesToThesisAndCourseWorkJunctionTable")]
+    partial class AddRulesToThesisAndCourseWorkJunctionTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -75,15 +78,15 @@ namespace LMS.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("AdvisorId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LectorId")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -104,7 +107,7 @@ namespace LMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AdvisorId");
+                    b.HasIndex("LectorId");
 
                     b.HasIndex("StudentId");
 
@@ -560,9 +563,9 @@ namespace LMS.Migrations
 
             modelBuilder.Entity("LMS.Models.CourseWork", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Advisor")
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "Lector")
                         .WithMany()
-                        .HasForeignKey("AdvisorId")
+                        .HasForeignKey("LectorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -572,7 +575,7 @@ namespace LMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Advisor");
+                    b.Navigation("Lector");
 
                     b.Navigation("Student");
                 });

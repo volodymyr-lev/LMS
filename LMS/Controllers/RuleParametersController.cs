@@ -1,4 +1,5 @@
 ﻿using LMS.Data;
+using LMS.DTOs;
 using LMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,15 +34,27 @@ public class RuleParametersController : ControllerBase
     }
 
     [HttpPost("add")]
-    public async Task<IActionResult> AddParameter(int ruleId, [FromBody] RuleParameter parameter)
+    public async Task<IActionResult> AddParameter([FromBody] CreateRuleParameterDto parameterDto)
     {
-        var rule = await _context.Rules.FindAsync(ruleId);
-        if (rule == null)
-            return NotFound();
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
-        parameter.RuleId = ruleId;
+        var rule = await _context.Rules.FindAsync(int.Parse(parameterDto.RuleId));
+        if (rule == null)
+            return NotFound($"Правило з ID {parameterDto.RuleId} не знайдено.");
+
+        var parameter = new RuleParameter
+        {
+            Name = parameterDto.Name,
+            Value = parameterDto.Value,
+            RuleId = rule.Id
+        };
+
         _context.RuleParameters.Add(parameter);
         await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(AddParameter), new { id = parameter.Id }, parameter);
     }
 

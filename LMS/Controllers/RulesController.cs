@@ -1,4 +1,5 @@
 ﻿using LMS.Data;
+using LMS.DTOs;
 using LMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,10 +26,23 @@ public class RulesController : ControllerBase
     }
 
     [HttpPost("add")]
-    public async Task<IActionResult> AddRule([FromBody] Rule rule)
+    public async Task<IActionResult> AddRule([FromBody] CreateRuleDTO ruleDto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var rule = new Rule
+        {
+            Name = ruleDto.Name,
+            Description = ruleDto.Description,
+            Parameters = new List<RuleParameter>() 
+        };
+
         _context.Rules.Add(rule);
         await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetRules), new { id = rule.Id }, rule);
     }
 

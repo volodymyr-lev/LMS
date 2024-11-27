@@ -78,11 +78,33 @@ namespace LMS.Data
                 .HasForeignKey(cw => cw.StudentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<CourseWork>()
+                .HasOne(cw => cw.Advisor)
+                .WithMany()
+                .HasForeignKey(cw => cw.AdvisorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CourseWork>()
+                .HasMany(cw => cw.Rules)
+                .WithMany()
+                .UsingEntity(j => j.ToTable("CourseWorkRules"));
+
             // Thesis Configuration
             modelBuilder.Entity<Thesis>()
                 .HasOne(t => t.Student)
                 .WithMany()
                 .HasForeignKey(t => t.StudentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Thesis>()
+                .HasMany(t => t.Rules)
+                .WithMany()
+                .UsingEntity(j => j.ToTable("ThesisRules"));
+
+            modelBuilder.Entity<Thesis>()
+                .HasOne(t => t.Mentor)
+                .WithMany()
+                .HasForeignKey(t => t.MentorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ThesisVerification Configuration
