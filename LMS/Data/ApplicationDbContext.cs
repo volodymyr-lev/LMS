@@ -55,7 +55,6 @@ namespace LMS.Data
             modelBuilder.Entity<IdentityUser>()
                 .HasOne<Group>()
                 .WithMany(g => g.Students)
-                .HasForeignKey("GroupId")
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
