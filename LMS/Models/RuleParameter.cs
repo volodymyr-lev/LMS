@@ -6,6 +6,5 @@ public class RuleParameter
     public string Name { get; set; }
     public string Value { get; set; }
 
-    public int RuleId { get; set; }
-    public Rule Rule { get; set; }
+    public ICollection<RuleRuleParameter> Rules { get; set; }
 }

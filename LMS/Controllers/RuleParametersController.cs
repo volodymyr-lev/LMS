@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace LMS.Controllers;
+
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Administrator")]
@@ -21,8 +22,9 @@ public class RuleParametersController : ControllerBase
     [HttpGet("list")]
     public async Task<IActionResult> GetParameters(int ruleId)
     {
-        var parameters = await _context.RuleParameters
-            .Where(p => p.RuleId == ruleId)
+        var parameters = await _context.RuleRuleParameters
+            .Where(rp => rp.RuleId == ruleId)
+            .Include(rp => rp.RuleParameter) 
             .ToListAsync();
 
         if (parameters == null || !parameters.Any())
@@ -30,7 +32,7 @@ public class RuleParametersController : ControllerBase
             return NotFound($"Параметри для правила з ID {ruleId} не знайдено.");
         }
 
-        return Ok(parameters);
+        return Ok(parameters.Select(rp => rp.RuleParameter));
     }
 
     [HttpPost("add")]
@@ -48,11 +50,19 @@ public class RuleParametersController : ControllerBase
         var parameter = new RuleParameter
         {
             Name = parameterDto.Name,
-            Value = parameterDto.Value,
-            RuleId = rule.Id
+            Value = parameterDto.Value
         };
 
         _context.RuleParameters.Add(parameter);
+        await _context.SaveChangesAsync();
+
+        var ruleRuleParameter = new RuleRuleParameter
+        {
+            RuleId = rule.Id,
+            RuleParameterId = parameter.Id
+        };
+
+        _context.RuleRuleParameters.Add(ruleRuleParameter);
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(AddParameter), new { id = parameter.Id }, parameter);

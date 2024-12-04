@@ -21,7 +21,11 @@ public class RulesController : ControllerBase
     [HttpGet("list")]
     public async Task<IActionResult> GetRules()
     {
-        var rules = await _context.Rules.Include(r => r.Parameters).ToListAsync();
+        var rules = await _context.Rules
+                                   .Include(r => r.RuleParameters)
+                                       .ThenInclude(rp => rp.RuleParameter) 
+                                   .ToListAsync();
+
         return Ok(rules);
     }
 
@@ -37,7 +41,7 @@ public class RulesController : ControllerBase
         {
             Name = ruleDto.Name,
             Description = ruleDto.Description,
-            Parameters = new List<RuleParameter>() 
+            RuleParameters = new List<RuleRuleParameter>()
         };
 
         _context.Rules.Add(rule);
@@ -49,17 +53,38 @@ public class RulesController : ControllerBase
     [HttpPut("update/{id}")]
     public async Task<IActionResult> UpdateRule(int id, [FromBody] Rule updatedRule)
     {
-        var rule = await _context.Rules.Include(r => r.Parameters).FirstOrDefaultAsync(r => r.Id == id);
+        var rule = await _context.Rules
+                                 .Include(r => r.RuleParameters)
+                                     .ThenInclude(rp => rp.RuleParameter)  
+                                 .FirstOrDefaultAsync(r => r.Id == id);
+
         if (rule == null)
             return NotFound();
 
         rule.Name = updatedRule.Name;
         rule.Description = updatedRule.Description;
 
+        if (updatedRule.RuleParameters != null && updatedRule.RuleParameters.Any())
+        {
+            foreach (var ruleRuleParameter in updatedRule.RuleParameters)
+            {
+                var existingParam = await _context.RuleParameters
+                                                    .FirstOrDefaultAsync(rp => rp.Id == ruleRuleParameter.RuleParameterId);
+
+                if (existingParam != null)
+                {
+                    ruleRuleParameter.RuleParameter = existingParam;
+                    rule.RuleParameters.Add(ruleRuleParameter);
+                }
+            }
+        }
+
         _context.Rules.Update(rule);
         await _context.SaveChangesAsync();
+
         return NoContent();
     }
+
 
     [HttpDelete("delete/{id}")]
     public async Task<IActionResult> DeleteRule(int id)
@@ -72,4 +97,34 @@ public class RulesController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpPost("{id}/parameters/add")]
+    public async Task<IActionResult> AddParameterToRule(int id, [FromBody] CreateRuleParameterDto parameterDto)
+    {
+        var rule = await _context.Rules.Include(r => r.RuleParameters).FirstOrDefaultAsync(r => r.Id == id);
+        if (rule == null)
+            return NotFound($"Правило з ID {id} не знайдено.");
+
+        var parameter = new RuleParameter
+        {
+            Name = parameterDto.Name,
+            Value = parameterDto.Value
+        };
+
+        _context.RuleParameters.Add(parameter);
+        await _context.SaveChangesAsync();
+
+        var ruleRuleParameter = new RuleRuleParameter
+        {
+            RuleId = rule.Id,
+            RuleParameterId = parameter.Id
+        };
+
+        rule.RuleParameters.Add(ruleRuleParameter); 
+
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(AddParameterToRule), new { id = parameter.Id }, parameter);
+    }
+
 }

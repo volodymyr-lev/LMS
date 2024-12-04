@@ -6,6 +6,7 @@ using LMS.Models;
 using LMS.Data;
 using System.Threading.Tasks;
 using LMS.DTOs;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace LMS.Controllers;
 [Route("api/[controller]")]
@@ -54,6 +55,8 @@ public class CourseController : ControllerBase
         return CreatedAtAction(nameof(GetCourse), new { id = course.Id }, course);
     }
 
+
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCourse(int id)
     {
@@ -61,7 +64,7 @@ public class CourseController : ControllerBase
             .Include(c => c.Lecturer)
             .Include(c => c.GroupCourses)
                 .ThenInclude(gc => gc.Group)
-            .FirstOrDefaultAsync(c => c.Id == id);
+        .FirstOrDefaultAsync(c => c.Id == id);
 
         if (course == null)
         {
@@ -70,6 +73,8 @@ public class CourseController : ControllerBase
 
         return Ok(course);
     }
+
+
 
     [HttpPut("update/{id}")]
     public async Task<IActionResult> UpdateCourse(int id, [FromBody] UpdateCourseRequest request)
@@ -110,6 +115,8 @@ public class CourseController : ControllerBase
     [HttpDelete("delete/{id}")]
     public async Task<IActionResult> DeleteCourse(int id)
     {
+        
+
         var course = await _context.Courses.FindAsync(id);
         if (course == null)
         {

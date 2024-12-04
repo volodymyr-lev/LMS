@@ -48,6 +48,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
+        Console.WriteLine("LOGIN ATTEMP");
+        
         if (ModelState.IsValid)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
@@ -60,10 +62,10 @@ public class AuthController : ControllerBase
                     var token = await GenerateJwtToken(user);
                     return Ok(new { Token = token });
                 }
-
+                Console.WriteLine($"Invalid login attempt for email: {model.Email}");
                 return Unauthorized("Invalid login attempt");
             }
-
+            Console.WriteLine($"User not found: {model.Email}");
             return Unauthorized("User not found");
         }
 
@@ -73,11 +75,15 @@ public class AuthController : ControllerBase
     // Генерація JWT токену
     private async Task<string> GenerateJwtToken(IdentityUser user)
     {
-        var claims = new[]
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName),
         };
+
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

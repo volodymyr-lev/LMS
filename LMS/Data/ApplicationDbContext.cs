@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LMS.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -22,6 +22,7 @@ namespace LMS.Data
         public DbSet<RuleParameter> RuleParameters { get; set; }
         public DbSet<ThesisVerification> ThesisVerifications { get; set; }
         public DbSet<Violation> Violations { get; set; }
+        public DbSet<RuleRuleParameter> RuleRuleParameters { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -121,10 +122,20 @@ namespace LMS.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Rule and RuleParameter Configuration
-            modelBuilder.Entity<Rule>()
-                .HasMany(r => r.Parameters)
-                .WithOne(rp => rp.Rule)
+
+            modelBuilder.Entity<RuleRuleParameter>()
+                .HasKey(rp => new { rp.RuleId, rp.RuleParameterId }); 
+
+            modelBuilder.Entity<RuleRuleParameter>()
+                .HasOne(rp => rp.Rule)
+                .WithMany(r => r.RuleParameters)
                 .HasForeignKey(rp => rp.RuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RuleRuleParameter>()
+                .HasOne(rp => rp.RuleParameter)
+                .WithMany(rp => rp.Rules)
+                .HasForeignKey(rp => rp.RuleParameterId)
                 .OnDelete(DeleteBehavior.Cascade);
 
 
@@ -156,8 +167,6 @@ namespace LMS.Data
             modelBuilder.Entity<Violation>()
                 .HasIndex(v => v.ThesisVerificationId);
 
-            modelBuilder.Entity<RuleParameter>()
-                .HasIndex(rp => rp.RuleId);
 
             // Configure cascade delete behavior
             foreach (var relationship in modelBuilder.Model.GetEntityTypes()
