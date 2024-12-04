@@ -8,5 +8,5 @@ public class Group
     public string Name { get; set; }
 
     public ICollection<GroupCourse> GroupCourses { get; set; }
-    public ICollection<IdentityUser> Students { get; set; }
+    public ICollection<ApplicationUser> Students { get; set; }
 }

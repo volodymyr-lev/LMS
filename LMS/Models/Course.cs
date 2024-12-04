@@ -10,7 +10,7 @@ public class Course
     public int Credits { get; set; }
 
     public string LecturerId { get; set; }
-    public IdentityUser Lecturer { get; set; }
+    public ApplicationUser Lecturer { get; set; }
 
     public ICollection<GroupCourse> GroupCourses { get; set; }
 }

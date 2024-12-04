@@ -13,10 +13,10 @@ using Microsoft.AspNetCore.Identity;
 public class GroupController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
 
-    public GroupController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+    public GroupController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
     {
         _context = context;
         _userManager = userManager;
@@ -33,7 +33,7 @@ public class GroupController : ControllerBase
         var group = new Group
         {
             Name = request.Name,
-            Students = await _userManager.Users
+            Students = (ICollection<ApplicationUser>)await _userManager.Users
                 .Where(u => request.StudentIds.Contains(u.Id))
                 .ToListAsync()
         };
@@ -79,7 +79,7 @@ public class GroupController : ControllerBase
         }
 
         group.Name = request.Name;
-        group.Students = await _userManager.Users
+        group.Students = (ICollection<ApplicationUser>)await _userManager.Users
             .Where(u => request.StudentIds.Contains(u.Id))
             .ToListAsync();
 

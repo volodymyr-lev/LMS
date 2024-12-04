@@ -13,10 +13,10 @@ public class Thesis
 
     // Зв'язок з студентом (який подав дипломну роботу)
     public string StudentId { get; set; }
-    public IdentityUser Student { get; set; }
+    public ApplicationUser Student { get; set; }
 
     public string MentorId { get; set; }
-    public IdentityUser Mentor { get; set; }
+    public ApplicationUser Mentor { get; set; }
 
     public ICollection<Rule> Rules { get; set; }
 }

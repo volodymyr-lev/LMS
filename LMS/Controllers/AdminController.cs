@@ -1,4 +1,5 @@
 ﻿using LMS.DTOs;
+using LMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -10,9 +11,9 @@ namespace LMS.Controllers;
 [Authorize(Roles = "Administrator")]
 public class AdminController : ControllerBase
 {
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public AdminController(UserManager<IdentityUser> userManager)
+    public AdminController(UserManager<ApplicationUser> userManager)
     {
         _userManager = userManager;
     }

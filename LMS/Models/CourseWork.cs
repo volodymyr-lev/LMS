@@ -13,10 +13,10 @@ public class CourseWork
 
     // Зв'язок з студентом
     public string StudentId { get; set; }
-    public IdentityUser Student { get; set; }
+    public ApplicationUser Student { get; set; }
 
     public string AdvisorId { get; set; }
-    public IdentityUser Advisor { get; set; }
+    public ApplicationUser Advisor { get; set; }
 
     public ICollection<Rule> Rules { get; set; }
 }

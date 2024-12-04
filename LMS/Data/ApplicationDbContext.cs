@@ -52,9 +52,10 @@ namespace LMS.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Group-Student Configuration (One-to-Many)
-            modelBuilder.Entity<IdentityUser>()
-                .HasOne<Group>()
-                .WithMany(g => g.Students)
+            modelBuilder.Entity<Group>()
+                .HasMany(g => g.Students)
+                .WithOne()
+                .HasForeignKey("GroupId")
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
