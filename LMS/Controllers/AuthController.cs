@@ -61,7 +61,7 @@ public class AuthController : ControllerBase
                 {
                     var token = await GenerateJwtToken(user);
                     return Ok(new { Token = token });
-                }
+                }   
                 Console.WriteLine($"Invalid login attempt for email: {model.Email}");
                 return Unauthorized("Invalid login attempt");
             }
@@ -81,6 +81,7 @@ public class AuthController : ControllerBase
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName),
+            
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
@@ -88,13 +89,23 @@ public class AuthController : ControllerBase
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
+            audience: _configuration["Jwt:Audience"], 
             claims: claims,
             expires: DateTime.Now.AddHours(1),
             signingCredentials: credentials
         );
+
+        Console.WriteLine("Token: ");
+        Console.WriteLine(token.EncodedPayload);
+
+        Console.WriteLine("Claims in generated token:");
+        foreach (var claim in claims)
+        {
+            Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
+        }
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }

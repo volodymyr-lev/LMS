@@ -10,6 +10,9 @@ using LMS.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DocumentFormat.OpenXml.InkML;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace LMS
 {
@@ -41,7 +44,12 @@ namespace LMS
             var jwtAudience = builder.Configuration["Jwt:Audience"];
 
             // Додаємо аутентифікацію через JWT
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
                 .AddJwtBearer(options =>
                 {
                     options.RequireHttpsMetadata = false; 
@@ -52,9 +60,38 @@ namespace LMS
                         ValidIssuer = jwtIssuer,
                         ValidateAudience = true,
                         ValidAudience = jwtAudience,
+                        ValidateIssuerSigningKey = true,
                         ValidateLifetime = true,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-                        ClockSkew = TimeSpan.Zero
+                        ClockSkew = TimeSpan.Zero,
+                        RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
+                            return Task.CompletedTask;
+                        },
+                        OnTokenValidated = context =>
+                        {
+                            // Additional logging for debugging
+                            var claims = context.Principal?.Claims;
+                            Console.WriteLine("Token Validated. Claims:");
+                            foreach (var claim in claims ?? Enumerable.Empty<Claim>())
+                            {
+                                Console.WriteLine($"{claim.Type}: {claim.Value}");
+                            }
+                            return Task.CompletedTask;
+                        },
+                        OnChallenge = context =>
+                        {
+                            Console.WriteLine("OnChallenge activated:");
+                            Console.WriteLine($"Error: {context.Error}");
+                            Console.WriteLine($"ErrorDescription: {context.ErrorDescription}");
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -93,6 +130,7 @@ namespace LMS
                 options.AddPolicy("AllowAll", b => b.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
             });
 
+
             // Set up Serilog for logging
             builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration(ctx.Configuration));
 
@@ -114,12 +152,39 @@ namespace LMS
 
             app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
-            app.UseCors("AllowAll");
 
+            app.UseRouting();
+            app.UseCors("AllowAll");
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
+
+            app.Use(async (context, next) =>
+            {
+                var user = context.User;
+
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    var roles = user.Claims
+                        .Where(c => c.Type == ClaimTypes.Role)
+                        .Select(c => c.Value);
+                    Console.WriteLine("User Roles: " + string.Join(", ", roles));
+                }
+                else
+                {
+                    Console.WriteLine("User is not authenticated.");
+                }
+
+                Console.WriteLine($"Request Path: {context.Request.Path}");
+                Console.WriteLine($"Is Authenticated: {context.User.Identity?.IsAuthenticated}");
+                Console.WriteLine($"Authorization Header: {context.Request.Headers["Authorization"]}");
+
+                await next();
+            });
+
+
+
 
             app.Run();
         }

@@ -7,11 +7,12 @@ using LMS.Data;
 using System.Threading.Tasks;
 using LMS.DTOs;
 using DocumentFormat.OpenXml.Spreadsheet;
+using System.Security.Claims;
 
 namespace LMS.Controllers;
+
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Administrator")]
 public class CourseController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -24,6 +25,7 @@ public class CourseController : ControllerBase
     }
 
     [HttpPost("create")]
+    [Authorize(Roles = "Administrator")]
     public async Task<IActionResult> CreateCourse([FromBody] CreateCourseRequest request)
     {
         if (request == null)
@@ -56,8 +58,8 @@ public class CourseController : ControllerBase
     }
 
 
-
     [HttpGet("{id}")]
+    [Authorize(Roles="Student")]
     public async Task<IActionResult> GetCourse(int id)
     {
         var course = await _context.Courses
@@ -74,9 +76,36 @@ public class CourseController : ControllerBase
         return Ok(course);
     }
 
+    [HttpGet("by-group")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetCoursesByUserGroup()
+    {
+        var userId = _userManager.GetUserId(User);
+        
+        if (userId == null)
+        {
+            return Unauthorized("User is not logged in.");
+        }
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null || user.GroupId == null)
+        {
+            return NotFound("User does not belong to any group.");
+        }
+
+        var courses = await _context.GroupCourses
+            .Where(gc => gc.GroupId == user.GroupId)
+            .Select(gc => gc.Course)
+            .ToListAsync();
+
+        return Ok(courses);
+    }
 
 
     [HttpPut("update/{id}")]
+    [Authorize(Roles = "Administrator")]
     public async Task<IActionResult> UpdateCourse(int id, [FromBody] UpdateCourseRequest request)
     {
         if (request == null || id <= 0)
@@ -113,6 +142,7 @@ public class CourseController : ControllerBase
     }
 
     [HttpDelete("delete/{id}")]
+    [Authorize(Roles = "Administrator")]
     public async Task<IActionResult> DeleteCourse(int id)
     {
         
