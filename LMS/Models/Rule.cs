@@ -8,5 +8,6 @@ public class Rule
     public string Name { get; set; }
     public string Description { get; set; }
 
+    [JsonIgnore]
     public ICollection<RuleRuleParameter> RuleParameters { get; set; }
 }

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LMS.Controllers;
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Administrator")]
+[Authorize(Roles = "Administrator,Lecturer")]
 public class RulesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;

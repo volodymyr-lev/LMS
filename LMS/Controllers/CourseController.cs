@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using LMS.DTOs;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.Security.Claims;
+using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace LMS.Controllers;
 
@@ -112,6 +113,92 @@ public class CourseController : ControllerBase
         return Ok(courses);
     }
 
+    [HttpGet("get-lecturer-courses")]
+    [Authorize(Roles = "Lecturer")]
+    public async Task<IActionResult> GetLecturerCourses()
+    {
+        var userId = _userManager.GetUserId(User);
+
+        if (userId == null)
+        {
+            return Unauthorized("User is not logged in.");
+        }
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
+        var courses = await _context.GroupCourses
+            .Where(gc => gc.Course.LecturerId == user.Id)
+            .Include(gc => gc.Course)
+                .ThenInclude(c => c.Lecturer)
+            .Select(gc => gc.Course)
+            .ToListAsync();
+
+        return Ok(courses);
+    }
+
+    [HttpGet("get-course-submissions/{id}")]
+    [Authorize(Roles = "Lecturer")]
+    public async Task<IActionResult> GetCourseSubmissions(int id)
+    {
+        var submissions = await _context.Assignments
+            .Where(a => a.CourseId == id)
+            .Include(a => a.CourseWorks)
+                .ThenInclude(cw => cw.Student)
+            .Include(a => a.Theses)
+                .ThenInclude(t => t.Student)
+            .ToListAsync();
+
+        var studentSubmissions = new List<StudentSubmission>();
+
+        foreach (var assignment in submissions)
+        {
+            studentSubmissions.AddRange(assignment.CourseWorks
+                .Select(cw => new StudentSubmission
+                {
+                    studentId = cw.StudentId,
+                    userName = cw.Student.UserName,
+                    assignmentId = assignment.Id.ToString(),
+                    assignmentTitle = assignment.Title,
+                    status = cw.FilePath != null ? "Submitted" : "Not Submitted"
+                }));
+
+            studentSubmissions.AddRange(assignment.Theses
+                .Select(t => new StudentSubmission
+                {
+                    studentId = t.StudentId,
+                    userName = t.Student.UserName,
+                    assignmentId = assignment.Id.ToString(),
+                    assignmentTitle = assignment.Title,
+                    status = t.FilePath != null ? "Submitted" : "Not Submitted"
+                }));
+        }
+
+        return Ok(studentSubmissions);
+    }
+
+    [HttpGet("get-file-id")]
+    [Authorize(Roles = "Student,Lecturer")]
+    public async Task<IActionResult> GetFileId(int courseId, string studentId)
+    {
+        if (string.IsNullOrEmpty(studentId) || courseId <= 0)
+        {
+            return BadRequest("Invalid courseId or studentId.");
+        }
+
+        var file = await _context.Assignments
+            .Where(a => a.CourseId == courseId)
+            .SelectMany(a => a.CourseWorks)
+            .FirstOrDefaultAsync(cw => cw.StudentId == studentId);
+
+        if (file == null)
+        {
+            return NotFound("File not found for the given courseId and studentId.");
+        }
+
+        return Ok(new { FileId = file.Id });
+    }
+
 
     [HttpPut("update/{id}")]
     [Authorize(Roles = "Administrator")]
@@ -167,4 +254,14 @@ public class CourseController : ControllerBase
 
         return NoContent();
     }
+}
+
+internal class StudentSubmission
+{
+    public string studentId { get; set; }
+    public string userName { get; set; }
+    public string assignmentId { get; set; }
+    public string assignmentTitle { get; set; }
+    public DateTime submissionDate { get; set; }
+    public string status { get; set; }
 }

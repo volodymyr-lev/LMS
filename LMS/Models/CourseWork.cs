@@ -11,6 +11,7 @@ public class CourseWork
     public string FilePath { get; set; }        // Шлях до файлу курсової роботи
 
     public int? AssignmentId { get; set; }
+    [JsonIgnore]
     public Assignment Assignment { get; set; }
 
     // Зв'язок з студентом

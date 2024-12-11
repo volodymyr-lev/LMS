@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using LMS.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace LMS.Data
 {
@@ -21,7 +22,9 @@ namespace LMS.Data
         public DbSet<Rule> Rules { get; set; }
         public DbSet<RuleParameter> RuleParameters { get; set; }
         public DbSet<ThesisVerification> ThesisVerifications { get; set; }
+        public DbSet<CourseWorkVerification> CourseWorkVerifications { get; set; }
         public DbSet<Violation> Violations { get; set; }
+        public DbSet<ViolationCourse> ViolationCourses { get; set; }
         public DbSet<RuleRuleParameter> RuleRuleParameters { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
 
@@ -149,6 +152,18 @@ namespace LMS.Data
                 .HasForeignKey(v => v.ThesisVerificationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<CourseWorkVerification>()
+                .HasOne(cw => cw.CourseWork)
+                .WithMany()
+                .HasForeignKey(cw => cw.CourseWorkId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CourseWorkVerification>()
+                .HasMany(cv => cv.Violations)
+                .WithOne(v=>v.CourseWorkVerification)
+                .HasForeignKey(cw => cw.CourseWorkVerificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Rule and RuleParameter Configuration
             modelBuilder.Entity<RuleRuleParameter>()
                 .HasKey(rp => new { rp.RuleId, rp.RuleParameterId });
@@ -175,7 +190,9 @@ namespace LMS.Data
             modelBuilder.Entity<Rule>().ToTable("Rules");
             modelBuilder.Entity<RuleParameter>().ToTable("RuleParameters");
             modelBuilder.Entity<ThesisVerification>().ToTable("ThesisVerifications");
+            modelBuilder.Entity<CourseWorkVerification>().ToTable("CourseWorkVerifications");
             modelBuilder.Entity<Violation>().ToTable("Violations");
+            modelBuilder.Entity<ViolationCourse>().ToTable("ViolationCourses");
             modelBuilder.Entity<Assignment>().ToTable("Assignments");
 
             // Update indexes
@@ -206,6 +223,9 @@ namespace LMS.Data
 
             modelBuilder.Entity<Violation>()
                 .HasIndex(v => v.ThesisVerificationId);
+            
+            modelBuilder.Entity<ViolationCourse>()
+                .HasIndex(cw => cw.CourseWorkVerificationId);
 
             // Configure cascade delete behavior
             foreach (var relationship in modelBuilder.Model.GetEntityTypes()

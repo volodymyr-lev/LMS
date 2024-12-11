@@ -15,6 +15,9 @@ public class Course
 
     public string Syllabus { get; set; }
 
+    public bool HasCourseWork { get; set; }
+    public bool HasThesis { get; set; }
+
     public ICollection<Assignment> Assignments { get; set; }
 
     [JsonIgnore]

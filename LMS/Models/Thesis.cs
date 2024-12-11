@@ -11,6 +11,7 @@ public class Thesis
     public string FilePath { get; set; }            
 
     public int? AssignmentId { get; set; }
+    [JsonIgnore]
     public Assignment Assignment { get; set; }
 
     // Зв'язок з студентом (який подав дипломну роботу)

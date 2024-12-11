@@ -29,10 +29,11 @@ public class CourseWorkFileUploadController : ControllerBase
 
     [HttpPost("upload")]
     public async Task<IActionResult> UploadCourseWorkFile(IFormFile file,
-        [FromQuery] string title,
-        [FromQuery] string description,
-        [FromQuery] string advisorId,
-        [FromQuery] string studentId)
+        [FromForm] string title,
+        [FromForm] string description,
+        [FromForm] string advisorId,
+        [FromForm] string studentId,
+        [FromForm] string assignmentId)
     {
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded.");
@@ -70,7 +71,8 @@ public class CourseWorkFileUploadController : ControllerBase
             Description = description,
             FilePath = filePath,
             StudentId = studentId,
-            AdvisorId = advisorId
+            AdvisorId = advisorId,
+            AssignmentId = Convert.ToInt32(assignmentId)
         };
 
         _context.CourseWorks.Add(courseWork);
@@ -124,4 +126,19 @@ public class CourseWorkFileUploadController : ControllerBase
 
         return Ok(new { Message = "Course work file updated successfully" });
     }
+
+    [HttpGet("check-uploaded")]
+    public async Task<IActionResult> CheckIfUserHasUploadedCourseWork([FromQuery] string studentId, [FromQuery] int assignmentId)
+    {
+        var coursework = await _context.CourseWorks
+                                       .FirstOrDefaultAsync(c => c.StudentId == studentId && c.AssignmentId == assignmentId);
+
+        if (coursework != null)
+        {
+            return Ok(true); 
+        }
+
+        return Ok(false); 
+    }
+
 }
