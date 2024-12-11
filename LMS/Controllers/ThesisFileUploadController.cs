@@ -69,9 +69,7 @@ public class ThesisFileUploadController : ControllerBase
             Description = description,
             FilePath = filePath,
             StudentId = studentId,
-            MentorId = mentorId,
-            Status = "submitted",
-            Score = null
+            MentorId = mentorId
         };
 
         _context.Theses.Add(thesis);
@@ -118,7 +116,6 @@ public class ThesisFileUploadController : ControllerBase
         }
 
         thesis.FilePath = filePath;
-        thesis.Status = "resubmitted";
 
         _context.Theses.Update(thesis);
         await _context.SaveChangesAsync();

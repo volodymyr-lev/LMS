@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Text.Json.Serialization;
 
 namespace LMS.Models;
 
@@ -7,9 +8,10 @@ public class CourseWork
     public int Id { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }
-    public double? Score { get; set; }
-    public string Status { get; set; }          // Наприклад, "submitted", "approved", "rejected"
     public string FilePath { get; set; }        // Шлях до файлу курсової роботи
+
+    public int? AssignmentId { get; set; }
+    public Assignment Assignment { get; set; }
 
     // Зв'язок з студентом
     public string StudentId { get; set; }

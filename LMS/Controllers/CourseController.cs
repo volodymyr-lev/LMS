@@ -59,14 +59,18 @@ public class CourseController : ControllerBase
 
 
     [HttpGet("{id}")]
-    [Authorize(Roles="Student")]
+    [Authorize(Roles = "Student")]
     public async Task<IActionResult> GetCourse(int id)
     {
         var course = await _context.Courses
             .Include(c => c.Lecturer)
             .Include(c => c.GroupCourses)
                 .ThenInclude(gc => gc.Group)
-        .FirstOrDefaultAsync(c => c.Id == id);
+            .Include(c => c.Assignments)
+                .ThenInclude(cw => cw.CourseWorks)
+            .Include(c => c.Assignments)
+                .ThenInclude(t => t.Theses)             // dunno mb assignment for student doesn't need theses and cw lol
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (course == null)
         {
@@ -75,6 +79,8 @@ public class CourseController : ControllerBase
 
         return Ok(course);
     }
+
+
 
     [HttpGet("by-group")]
     [Authorize(Roles = "Student")]
@@ -97,8 +103,11 @@ public class CourseController : ControllerBase
 
         var courses = await _context.GroupCourses
             .Where(gc => gc.GroupId == user.GroupId)
-            .Select(gc => gc.Course)
+            .Include(gc => gc.Course) 
+                .ThenInclude(c => c.Lecturer) 
+            .Select(gc => gc.Course) 
             .ToListAsync();
+
 
         return Ok(courses);
     }

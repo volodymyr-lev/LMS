@@ -70,9 +70,7 @@ public class CourseWorkFileUploadController : ControllerBase
             Description = description,
             FilePath = filePath,
             StudentId = studentId,
-            AdvisorId = advisorId,
-            Status = "submitted",
-            Score = null
+            AdvisorId = advisorId
         };
 
         _context.CourseWorks.Add(courseWork);
@@ -120,7 +118,6 @@ public class CourseWorkFileUploadController : ControllerBase
         }
 
         courseWork.FilePath = filePath;
-        courseWork.Status = "resubmitted";
 
         _context.CourseWorks.Update(courseWork);
         await _context.SaveChangesAsync();

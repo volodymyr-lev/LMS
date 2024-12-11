@@ -1,4 +1,6 @@
-﻿namespace LMS.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace LMS.Models;
 
 public class Rule
 {

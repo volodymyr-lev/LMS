@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Text.Json.Serialization;
 
 namespace LMS.Models;
 
@@ -6,10 +7,11 @@ public class Thesis
 {
     public int Id { get; set; }
     public string Title { get; set; }
-    public string Description { get; set; }
-    public double? Score { get; set; }
-    public string Status { get; set; }              // Наприклад, "submitted", "approved", "rejected"
-    public string FilePath { get; set; }            // Шлях до файлу дипломної роботи
+    public string Description { get; set; }           
+    public string FilePath { get; set; }            
+
+    public int? AssignmentId { get; set; }
+    public Assignment Assignment { get; set; }
 
     // Зв'язок з студентом (який подав дипломну роботу)
     public string StudentId { get; set; }

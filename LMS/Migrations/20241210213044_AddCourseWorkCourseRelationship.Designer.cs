@@ -3,6 +3,7 @@ using System;
 using LMS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LMS.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241210213044_AddCourseWorkCourseRelationship")]
+    partial class AddCourseWorkCourseRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,13 +138,6 @@ namespace LMS.Migrations
                     b.Property<int>("RuleId")
                         .HasColumnType("integer");
 
-                    b.Property<double?>("Score")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
@@ -165,6 +161,9 @@ namespace LMS.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CourseWorkId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Credits")
                         .HasColumnType("integer");
 
@@ -183,6 +182,9 @@ namespace LMS.Migrations
                     b.Property<string>("Syllabus")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("ThesisId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -203,14 +205,24 @@ namespace LMS.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("AssignmentId")
+                    b.Property<int?>("CourseId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double?>("Score")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -226,7 +238,8 @@ namespace LMS.Migrations
 
                     b.HasIndex("AdvisorId");
 
-                    b.HasIndex("AssignmentId");
+                    b.HasIndex("CourseId")
+                        .IsUnique();
 
                     b.HasIndex("StudentId");
 
@@ -361,18 +374,28 @@ namespace LMS.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AssignmentId")
+                    b.Property<int?>("CourseId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("MentorId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double?>("Score")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -386,7 +409,8 @@ namespace LMS.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignmentId");
+                    b.HasIndex("CourseId")
+                        .IsUnique();
 
                     b.HasIndex("MentorId");
 
@@ -666,9 +690,9 @@ namespace LMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LMS.Models.Assignment", "Assignment")
-                        .WithMany("CourseWorks")
-                        .HasForeignKey("AssignmentId")
+                    b.HasOne("LMS.Models.Course", "Course")
+                        .WithOne("CourseWork")
+                        .HasForeignKey("LMS.Models.CourseWork", "CourseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LMS.Models.ApplicationUser", "Student")
@@ -679,7 +703,7 @@ namespace LMS.Migrations
 
                     b.Navigation("Advisor");
 
-                    b.Navigation("Assignment");
+                    b.Navigation("Course");
 
                     b.Navigation("Student");
                 });
@@ -743,9 +767,9 @@ namespace LMS.Migrations
 
             modelBuilder.Entity("LMS.Models.Thesis", b =>
                 {
-                    b.HasOne("LMS.Models.Assignment", "Assignment")
-                        .WithMany("Theses")
-                        .HasForeignKey("AssignmentId")
+                    b.HasOne("LMS.Models.Course", "Course")
+                        .WithOne("Thesis")
+                        .HasForeignKey("LMS.Models.Thesis", "CourseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LMS.Models.ApplicationUser", "Mentor")
@@ -760,7 +784,7 @@ namespace LMS.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Assignment");
+                    b.Navigation("Course");
 
                     b.Navigation("Mentor");
 
@@ -855,18 +879,17 @@ namespace LMS.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LMS.Models.Assignment", b =>
-                {
-                    b.Navigation("CourseWorks");
-
-                    b.Navigation("Theses");
-                });
-
             modelBuilder.Entity("LMS.Models.Course", b =>
                 {
                     b.Navigation("Assignments");
 
+                    b.Navigation("CourseWork")
+                        .IsRequired();
+
                     b.Navigation("GroupCourses");
+
+                    b.Navigation("Thesis")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LMS.Models.Group", b =>

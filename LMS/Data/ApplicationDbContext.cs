@@ -23,6 +23,7 @@ namespace LMS.Data
         public DbSet<ThesisVerification> ThesisVerifications { get; set; }
         public DbSet<Violation> Violations { get; set; }
         public DbSet<RuleRuleParameter> RuleRuleParameters { get; set; }
+        public DbSet<Assignment> Assignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +35,33 @@ namespace LMS.Data
                 .WithMany()
                 .HasForeignKey(c => c.LecturerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Assignment Configuration
+            modelBuilder.Entity<Assignment>()
+                .HasOne(a => a.Course)
+                .WithMany()
+                .HasForeignKey(a => a.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Assignment>()
+                .HasOne(a => a.Rule)
+                .WithMany()
+                .HasForeignKey(a => a.RuleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // New Assignment-CourseWork Configuration
+            modelBuilder.Entity<CourseWork>()
+                .HasOne(cw => cw.Assignment)
+                .WithMany(a => a.CourseWorks)
+                .HasForeignKey(cw => cw.AssignmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // New Assignment-Thesis Configuration
+            modelBuilder.Entity<Thesis>()
+                .HasOne(t => t.Assignment)
+                .WithMany(a => a.Theses)
+                .HasForeignKey(t => t.AssignmentId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Group-Course Configuration (Many-to-Many)
             modelBuilder.Entity<GroupCourse>()
@@ -122,9 +150,8 @@ namespace LMS.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Rule and RuleParameter Configuration
-
             modelBuilder.Entity<RuleRuleParameter>()
-                .HasKey(rp => new { rp.RuleId, rp.RuleParameterId }); 
+                .HasKey(rp => new { rp.RuleId, rp.RuleParameterId });
 
             modelBuilder.Entity<RuleRuleParameter>()
                 .HasOne(rp => rp.Rule)
@@ -138,7 +165,6 @@ namespace LMS.Data
                 .HasForeignKey(rp => rp.RuleParameterId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
             // Configure table names explicitly
             modelBuilder.Entity<Course>().ToTable("Courses");
             modelBuilder.Entity<Group>().ToTable("Groups");
@@ -150,8 +176,22 @@ namespace LMS.Data
             modelBuilder.Entity<RuleParameter>().ToTable("RuleParameters");
             modelBuilder.Entity<ThesisVerification>().ToTable("ThesisVerifications");
             modelBuilder.Entity<Violation>().ToTable("Violations");
+            modelBuilder.Entity<Assignment>().ToTable("Assignments");
 
-            // Add indexes
+            // Update indexes
+            modelBuilder.Entity<Assignment>()
+                .HasIndex(a => a.CourseId);
+
+            modelBuilder.Entity<Assignment>()
+                .HasIndex(a => a.RuleId);
+
+            // New indexes for Assignment relationship with CourseWork and Thesis
+            modelBuilder.Entity<CourseWork>()
+                .HasIndex(cw => cw.AssignmentId);
+
+            modelBuilder.Entity<Thesis>()
+                .HasIndex(t => t.AssignmentId);
+
             modelBuilder.Entity<Course>()
                 .HasIndex(c => c.LecturerId);
 
@@ -166,7 +206,6 @@ namespace LMS.Data
 
             modelBuilder.Entity<Violation>()
                 .HasIndex(v => v.ThesisVerificationId);
-
 
             // Configure cascade delete behavior
             foreach (var relationship in modelBuilder.Model.GetEntityTypes()
